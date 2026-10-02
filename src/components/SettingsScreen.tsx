@@ -16,6 +16,9 @@ import {
   Gauge,
   Smartphone,
   Trash2,
+  Copy,
+  Check,
+  Share2,
 } from 'lucide-react';
 import { ClearConfirmModal } from './ClearConfirmModal';
 import { AppsScriptModal } from './AppsScriptModal';
@@ -61,6 +64,32 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   const [nameSaveMsg, setNameSaveMsg] = useState(false);
   const [settingsSaveMsg, setSettingsSaveMsg] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const getAppShareUrl = () => {
+    const origin = window.location.origin;
+    if (origin.includes('ais-dev-')) {
+      return origin.replace('ais-dev-', 'ais-pre-');
+    }
+    return origin;
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      const shareUrl = getAppShareUrl();
+      await navigator.clipboard.writeText(shareUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
+    } catch {
+      // fallback
+    }
+  };
+
+  const handleShareWhatsApp = () => {
+    const appUrl = getAppShareUrl();
+    const text = encodeURIComponent(`Electricity Bill Manager:\n${appUrl}`);
+    window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+  };
 
   // Modals
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
@@ -137,6 +166,43 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <strong className="text-white block mb-1">{LABELS.modals.mobileGuide.iphoneTitle}</strong>
             <span>{LABELS.modals.mobileGuide.iphoneDesc}</span>
           </div>
+        </div>
+
+        {/* Action Buttons to Share / Copy Link for Family Phones */}
+        <div className="mt-4 pt-3 border-t border-white/10 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handleCopyLink}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/15 transition-colors cursor-pointer"
+          >
+            {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+            <span>{copiedLink ? LABELS.modals.mobileGuide.copiedLink : LABELS.modals.mobileGuide.copyLink}</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleShareWhatsApp}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-colors cursor-pointer shadow-sm"
+          >
+            <Share2 className="w-4 h-4" />
+            <span>{LABELS.modals.mobileGuide.shareWhatsApp}</span>
+          </button>
+        </div>
+
+        {/* URL Box */}
+        <div className="mt-3 p-2.5 bg-black/30 rounded-xl border border-white/10 flex items-center justify-between gap-2 text-[11px] font-mono text-indigo-200">
+          <span className="truncate">{getAppShareUrl()}</span>
+          <span className="shrink-0 px-2 py-0.5 rounded bg-indigo-500/40 text-white font-sans text-[10px] font-bold">
+            Shared Link
+          </span>
+        </div>
+
+        {/* Access Guidance */}
+        <div className="mt-2.5 p-2.5 bg-white/5 rounded-xl border border-white/10 text-[11px] text-slate-300 leading-relaxed">
+          <span className="font-semibold text-amber-300">⚠️ Agar Safari par &quot;You don&apos;t have access to this page&quot; aaye:</span>
+          <ol className="list-decimal list-inside mt-1 space-y-0.5 text-slate-300">
+            <li>AI Studio screen ke upar daayein (top-right) <strong>Share</strong> button dabayein aur <strong>&quot;Anyone with the link&quot;</strong> select karein.</li>
+            <li>Ya Safari browser mein usi Google Account (<strong className="text-white">ashar.r1401@gmail.com</strong>) se sign in karein.</li>
+          </ol>
         </div>
       </div>
 

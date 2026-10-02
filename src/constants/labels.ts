@@ -270,6 +270,10 @@ export const LABELS = {
       androidDesc: 'Browser menu (⋮ three dots) par tap karein aur "Add to Home screen" ya "Install App" choose karein.',
       iphoneTitle: '🍏 iPhone (Safari):',
       iphoneDesc: 'Neeche Share button ([↑]) par tap karein aur "Add to Home Screen" par click karein.',
+      copyLink: 'Copy App Link',
+      copiedLink: 'Link Copied!',
+      shareWhatsApp: 'Share to WhatsApp',
+      installAppButton: 'Install App on this Phone',
     },
   },
 
