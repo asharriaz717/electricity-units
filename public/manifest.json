@@ -1,0 +1,26 @@
+{
+  "id": "/",
+  "name": "Electricity Bill Manager",
+  "short_name": "BillManager",
+  "description": "Multi-meter electricity reading tracker with billing cycle calculation, limit alerts, offline queue, and Google Sheets sync across phones.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F5F7FB",
+  "theme_color": "#4F46E5",
+  "icons": [
+    {
+      "src": "/icon-preview.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-preview.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

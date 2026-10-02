@@ -1,0 +1,6 @@
+{
+  "name": "Electricity Bill Manager",
+  "description": "Multi-meter electricity reading tracker with billing cycle calculation, limit alerts, offline queue, and Google Sheets sync across phones.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
