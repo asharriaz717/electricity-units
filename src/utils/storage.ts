@@ -45,11 +45,17 @@ export function getSettings(): AppSettings {
         startDay: Number(parsed.startDay) || DEFAULT_SETTINGS.startDay,
         endDay: Number(parsed.endDay) || DEFAULT_SETTINGS.endDay,
         limit: Number(parsed.limit) || DEFAULT_SETTINGS.limit,
-        webAppUrl: parsed.webAppUrl || '',
+        webAppUrl:
+          parsed.webAppUrl && parsed.webAppUrl.trim().startsWith('http')
+            ? parsed.webAppUrl.trim()
+            : DEFAULT_SETTINGS.webAppUrl,
         token: parsed.token || DEFAULT_SETTINGS.token,
-        googleSheetUrl: parsed.googleSheetUrl || '',
-        m1BaselineReading: Number(parsed.m1BaselineReading) || 100,
-        m2BaselineReading: Number(parsed.m2BaselineReading) || 100,
+        googleSheetUrl:
+          parsed.googleSheetUrl && parsed.googleSheetUrl.trim().startsWith('http')
+            ? parsed.googleSheetUrl.trim()
+            : DEFAULT_SETTINGS.googleSheetUrl,
+        m1BaselineReading: Number(parsed.m1BaselineReading) || DEFAULT_SETTINGS.m1BaselineReading || 100,
+        m2BaselineReading: Number(parsed.m2BaselineReading) || DEFAULT_SETTINGS.m2BaselineReading || 100,
       };
     }
   } catch (e) {

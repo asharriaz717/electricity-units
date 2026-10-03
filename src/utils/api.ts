@@ -23,20 +23,26 @@ export async function fetchSheetData(webAppUrl: string, token: string): Promise<
   try {
     const cleanUrl = webAppUrl.trim();
     const separator = cleanUrl.includes('?') ? '&' : '?';
-    const targetUrl = `${cleanUrl}${separator}token=${encodeURIComponent(token.trim())}&t=${Date.now()}`;
+    const targetUrl = `${cleanUrl}${separator}token=${encodeURIComponent(token.trim())}`;
 
     const res = await fetch(targetUrl, {
       method: 'GET',
-      headers: {
-        Accept: 'application/json',
-      },
+      mode: 'cors',
+      redirect: 'follow',
     });
 
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
 
-    const data = await res.json();
+    const text = await res.text();
+    let data: any;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error('Received non-JSON response from Google Sheet');
+    }
+
     if (data.status === 'error') {
       throw new Error(data.message || 'Sheet API returned error');
     }
@@ -47,7 +53,7 @@ export async function fetchSheetData(webAppUrl: string, token: string): Promise<
       settings: data.settings || {},
     };
   } catch (err: any) {
-    console.error('fetchSheetData error:', err);
+    console.warn('fetchSheetData error:', err?.message || err);
     return {
       success: false,
       error: err.message || 'Network error connecting to Google Sheet',

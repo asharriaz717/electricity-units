@@ -94,7 +94,7 @@ export default function App() {
   }, [settings]);
 
   // Core Sync Function
-  const syncWithSheet = useCallback(async () => {
+  const syncWithSheet = useCallback(async (isManual = false) => {
     const currentSettings = getSettings();
     const url = currentSettings.webAppUrl;
     const token = currentSettings.token || '';
@@ -157,12 +157,16 @@ export default function App() {
         const nowIso = new Date().toISOString();
         setLastSynced(nowIso);
         setLastSyncedState(nowIso);
-        showToast(LABELS.sync.syncedSuccess, 'success');
-      } else if (result.error) {
+        if (isManual) {
+          showToast(LABELS.sync.syncedSuccess, 'success');
+        }
+      } else if (result.error && isManual) {
         showToast(result.error, 'error');
       }
     } catch (err: any) {
-      showToast(LABELS.sync.syncFailed(err.message || 'Network error'), 'error');
+      if (isManual) {
+        showToast(LABELS.sync.syncFailed(err.message || 'Network error'), 'error');
+      }
     } finally {
       setIsSyncing(false);
       reloadLocalData();
@@ -363,7 +367,7 @@ export default function App() {
         isSyncing={isSyncing}
         pendingCount={pendingQueueCount}
         hasGoogleSheet={Boolean(settings.webAppUrl)}
-        onManualSync={syncWithSheet}
+        onManualSync={() => syncWithSheet(true)}
       />
 
       {/* Main Content Area */}
@@ -415,7 +419,7 @@ export default function App() {
             onNavigate={setCurrentScreen}
             onSaveSettings={handleSaveSettings}
             onUpdateUserName={handleUpdateUserName}
-            onManualSync={syncWithSheet}
+            onManualSync={() => syncWithSheet(true)}
             onClearAllData={handleClearAllData}
           />
         )}

@@ -25,9 +25,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   startDay: 9,
   endDay: 9,
   limit: 200,
-  webAppUrl: '',
+  webAppUrl: 'https://script.google.com/macros/s/AKfycbyQx9L9I3Dms19PBuEWNk7w5EhUCHq8nhKw3e0D6vw2wKNaVRNm1nhgVBQ_7nd0i3Ni/exec',
   token: 'electricity_secret_token',
-  googleSheetUrl: '',
+  googleSheetUrl: DEFAULT_GOOGLE_SHEET_TEMPLATE_URL,
   m1BaselineReading: 3999,
   m2BaselineReading: 11298,
 };
