@@ -231,9 +231,6 @@ export const MeterScreen: React.FC<MeterScreenProps> = ({
               {summary.newlyAddedTotal.toFixed(2)}{' '}
               <span className="text-xs font-medium text-indigo-500">/ {settings.limit} {LABELS.home.unitsSuffix}</span>
             </div>
-            <p className="text-[11px] text-indigo-700 font-medium mt-1">
-              {LABELS.meterScreen.newlyAddedSubtitle}
-            </p>
           </div>
         </div>
 
@@ -377,9 +374,6 @@ export const MeterScreen: React.FC<MeterScreenProps> = ({
                   </span>
                 </div>
               </div>
-              <p className="text-[11px] text-slate-400 mt-2">
-                {LABELS.meterScreen.autoDateNote}
-              </p>
             </div>
           </div>
 
