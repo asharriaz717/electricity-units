@@ -257,6 +257,28 @@ export const MeterScreen: React.FC<MeterScreenProps> = ({
         </div>
       </div>
 
+      {/* Warning Notice if Google Sheet is not connected on this device */}
+      {!settings.webAppUrl && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-start gap-2.5">
+            <span className="text-base shrink-0">⚠️</span>
+            <div>
+              <strong className="text-amber-900 block font-bold">Google Sheet Not Connected on this Phone</strong>
+              <span className="text-amber-700 block mt-0.5">
+                Nayi reading is phone par save ho rahi hai magar Google Sheet mein nahi ja rahi. Settings mein ja kar Google Apps Script URL paste karein ya Test karein.
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate('settings')}
+            className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shrink-0 cursor-pointer self-start sm:self-auto transition-colors shadow-xs"
+          >
+            Connect Sheet
+          </button>
+        </div>
+      )}
+
       {/* Enter Value Form */}
       <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.03)]">
         <div className="flex items-center justify-between mb-4">

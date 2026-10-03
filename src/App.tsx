@@ -107,24 +107,38 @@ export default function App() {
     setIsSyncing(true);
 
     try {
-      // 1. Process pending items in offline queue
+      // 1. Check if any local entries have pending === true, ensure they are in offline queue
+      const localM1 = getEntries('m1');
+      const localM2 = getEntries('m2');
+      const pendingEntries = [...localM1, ...localM2].filter((e) => e.pending);
+      const currentQueue = getOfflineQueue();
+      for (const p of pendingEntries) {
+        if (!currentQueue.some((q) => q.payload?.id === p.id)) {
+          addToOfflineQueue({
+            action: 'add',
+            payload: p,
+          });
+        }
+      }
+
+      // 2. Process pending items in offline queue
       await processOfflineQueue(currentSettings, reloadLocalData);
 
-      // 2. Fetch fresh data from sheet
+      // 3. Fetch fresh data from sheet
       const result = await fetchSheetData(url, token);
       if (result.success && result.entries) {
         // Map entries
         const sheetM1 = result.entries.filter((e) => e.meter === 'm1');
         const sheetM2 = result.entries.filter((e) => e.meter === 'm2');
 
-        const localM1 = getEntries('m1');
-        const localM2 = getEntries('m2');
+        const currentLocalM1 = getEntries('m1');
+        const currentLocalM2 = getEntries('m2');
 
-        const pendingM1 = localM1.filter((e) => e.pending);
-        const pendingM2 = localM2.filter((e) => e.pending);
+        const stillPendingM1 = currentLocalM1.filter((e) => e.pending);
+        const stillPendingM2 = currentLocalM2.filter((e) => e.pending);
 
-        const combinedM1 = [...pendingM1, ...sheetM1.filter((s) => !pendingM1.some((p) => p.id === s.id))];
-        const combinedM2 = [...pendingM2, ...sheetM2.filter((s) => !pendingM2.some((p) => p.id === s.id))];
+        const combinedM1 = [...stillPendingM1, ...sheetM1.filter((s) => !stillPendingM1.some((p) => p.id === s.id))];
+        const combinedM2 = [...stillPendingM2, ...sheetM2.filter((s) => !stillPendingM2.some((p) => p.id === s.id))];
 
         saveEntries('m1', combinedM1);
         saveEntries('m2', combinedM2);
@@ -155,8 +169,33 @@ export default function App() {
     }
   }, [reloadLocalData]);
 
-  // Sync on mount if sheet URL is configured
+  // Sync on mount and check URL query parameters for auto sync configuration
   useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const syncUrlParam = params.get('syncUrl') || params.get('webAppUrl');
+      const sheetUrlParam = params.get('sheetUrl') || params.get('googleSheetUrl');
+      if (syncUrlParam) {
+        const currentSettings = getSettings();
+        const updated = {
+          ...currentSettings,
+          webAppUrl: syncUrlParam,
+          googleSheetUrl: sheetUrlParam || currentSettings.googleSheetUrl,
+        };
+        saveSettings(updated);
+        setSettingsState(updated);
+        // Clean URL params from address bar without reloading
+        window.history.replaceState({}, document.title, window.location.pathname);
+        showToast('Google Sheet automatically connected from link!', 'success');
+        setTimeout(() => {
+          syncWithSheet();
+        }, 300);
+        return;
+      }
+    } catch (e) {
+      console.error('Error parsing syncUrl param:', e);
+    }
+
     if (settings.webAppUrl && isOnline) {
       syncWithSheet();
     }
@@ -222,23 +261,27 @@ export default function App() {
       date: dateIso || new Date().toISOString(),
       name: currentName,
       uid: userUid,
-      pending: !!settings.webAppUrl,
+      pending: true,
     };
 
     // 1. Local Save
     addLocalEntry(newEntry);
     reloadLocalData();
 
-    // 2. Queue for Google Sheet sync
+    // 2. Always queue for Google Sheet sync so data is sent when online/connected
+    addToOfflineQueue({
+      action: 'add',
+      payload: newEntry,
+    });
+
     if (settings.webAppUrl) {
-      addToOfflineQueue({
-        action: 'add',
-        payload: newEntry,
-      });
       syncWithSheet();
       showToast(LABELS.toasts.rowAdded(value, isFirstRow, newlyAdded), 'success');
     } else {
-      showToast(LABELS.toasts.rowSavedLocal(value, isFirstRow, newlyAdded), 'success');
+      showToast(
+        `Saved on phone: ${value.toFixed(2)} (${isFirstRow ? '0.00 at start' : `+${newlyAdded.toFixed(2)} newly added`}). ⚠️ Google Sheet is not connected yet!`,
+        'info'
+      );
     }
   };
 

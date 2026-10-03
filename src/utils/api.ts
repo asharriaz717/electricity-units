@@ -86,8 +86,17 @@ async function postToSheet(
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
 
-    const json = await res.json();
-    if (json.status === 'error') {
+    const text = await res.text();
+    let json: any = {};
+    try {
+      json = JSON.parse(text);
+    } catch {
+      if (res.ok) {
+        return { success: true, data: { status: 'success' } };
+      }
+    }
+
+    if (json && json.status === 'error') {
       throw new Error(json.message || 'Action failed on Sheet');
     }
 
@@ -95,6 +104,28 @@ async function postToSheet(
   } catch (err: any) {
     return { success: false, error: err.message || 'Network error' };
   }
+}
+
+export async function testSheetConnection(
+  webAppUrl: string,
+  token: string
+): Promise<{ success: boolean; message: string }> {
+  if (!webAppUrl || !webAppUrl.trim()) {
+    return { success: false, message: 'Google Apps Script Web App URL is empty' };
+  }
+
+  const fetchRes = await fetchSheetData(webAppUrl, token);
+  if (!fetchRes.success) {
+    return {
+      success: false,
+      message: fetchRes.error || 'Connection failed. Check Web App URL and permissions (Who has access: Anyone).',
+    };
+  }
+
+  return {
+    success: true,
+    message: 'Google Sheet connected successfully!',
+  };
 }
 
 export async function addEntryToSheet(

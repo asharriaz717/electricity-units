@@ -19,10 +19,12 @@ import {
   Copy,
   Check,
   Share2,
+  AlertCircle,
 } from 'lucide-react';
 import { ClearConfirmModal } from './ClearConfirmModal';
 import { AppsScriptModal } from './AppsScriptModal';
 import { GoogleSheetTemplateModal } from './GoogleSheetTemplateModal';
+import { testSheetConnection } from '../utils/api';
 
 interface SettingsScreenProps {
   settings: AppSettings;
@@ -64,12 +66,21 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   const [nameSaveMsg, setNameSaveMsg] = useState(false);
   const [settingsSaveMsg, setSettingsSaveMsg] = useState(false);
+  const [sheetSaveMsg, setSheetSaveMsg] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // Sheet connection testing
+  const [isTestingSheet, setIsTestingSheet] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
   const getAppShareUrl = () => {
-    const origin = window.location.origin;
+    let origin = window.location.origin;
     if (origin.includes('ais-dev-')) {
-      return origin.replace('ais-dev-', 'ais-pre-');
+      origin = origin.replace('ais-dev-', 'ais-pre-');
+    }
+    if (webAppUrl && webAppUrl.trim()) {
+      const sep = origin.includes('?') ? '&' : '?';
+      return `${origin}${sep}syncUrl=${encodeURIComponent(webAppUrl.trim())}&sheetUrl=${encodeURIComponent(googleSheetUrl.trim())}`;
     }
     return origin;
   };
@@ -89,6 +100,44 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     const appUrl = getAppShareUrl();
     const text = encodeURIComponent(`Electricity Bill Manager:\n${appUrl}`);
     window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+  };
+
+  const handleSaveSheetConfig = () => {
+    const updated: AppSettings = {
+      ...settings,
+      webAppUrl: webAppUrl.trim(),
+      googleSheetUrl: googleSheetUrl.trim(),
+      token: token.trim(),
+      startDay,
+      endDay,
+      limit,
+      m1BaselineReading: m1Baseline,
+      m2BaselineReading: m2Baseline,
+    };
+    onSaveSettings(updated);
+    setSheetSaveMsg(true);
+    setTimeout(() => setSheetSaveMsg(false), 3000);
+    onManualSync();
+  };
+
+  const handleTestConnection = async () => {
+    if (!webAppUrl.trim()) {
+      setTestResult({ success: false, message: 'Pehle Google Apps Script Web App URL paste karein.' });
+      return;
+    }
+    setIsTestingSheet(true);
+    setTestResult(null);
+    try {
+      const res = await testSheetConnection(webAppUrl.trim(), token.trim());
+      setTestResult(res);
+      if (res.success) {
+        handleSaveSheetConfig();
+      }
+    } catch (err: any) {
+      setTestResult({ success: false, message: err.message || 'Connection failed' });
+    } finally {
+      setIsTestingSheet(false);
+    }
   };
 
   // Modals
@@ -351,12 +400,47 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </p>
           </div>
 
-          {/* Sync status & actions */}
-          <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+          {/* Test connection result banner */}
+          {testResult && (
+            <div
+              className={`p-3.5 rounded-xl border text-xs flex items-start gap-2.5 transition-all ${
+                testResult.success
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                  : 'bg-red-50 border-red-200 text-red-900'
+              }`}
+            >
+              {testResult.success ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1">
+                <strong className="block font-bold">
+                  {testResult.success ? 'Google Sheet Connected!' : 'Connection Error'}
+                </strong>
+                <span className="text-[11px] leading-relaxed block mt-0.5">{testResult.message}</span>
+                {!testResult.success && (
+                  <p className="text-[11px] text-red-700 mt-1">
+                    Tip: Google Apps Script mein <strong>Deploy &gt; New deployment</strong> mein <strong>&quot;Who has access: Anyone&quot;</strong> select karna zaroori hai.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {sheetSaveMsg && (
+            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>Google Sheet URL saved successfully! Syncing entries now...</span>
+            </div>
+          )}
+
+          {/* Action buttons: Save, Test, Sync, Apps Script */}
+          <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200/60">
             <div className="text-xs text-slate-600 space-y-0.5">
               <div>
                 <span className="font-semibold text-slate-700">{LABELS.settings.offlineQueueLabel}</span>{' '}
-                <strong className={pendingQueueCount > 0 ? 'text-amber-600' : 'text-slate-700'}>
+                <strong className={pendingQueueCount > 0 ? 'text-amber-600 font-bold' : 'text-slate-700 font-bold'}>
                   {pendingQueueCount} items
                 </strong>
               </div>
@@ -367,22 +451,31 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               )}
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => setIsAppsScriptModalOpen(true)}
-                className="px-3.5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                className="px-3 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-xs transition-colors cursor-pointer flex items-center gap-1.5"
               >
                 <FileCode className="w-3.5 h-3.5 text-slate-600" />
                 <span>{LABELS.settings.appsScriptButton}</span>
               </button>
               <button
                 type="button"
-                onClick={onManualSync}
+                onClick={handleTestConnection}
+                disabled={isTestingSheet}
+                className="px-3 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isTestingSheet ? 'animate-spin' : ''}`} />
+                <span>{isTestingSheet ? 'Testing...' : 'Test Connection'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveSheetConfig}
                 className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>{LABELS.settings.syncNowButton}</span>
+                <Save className="w-3.5 h-3.5" />
+                <span>Save &amp; Connect</span>
               </button>
             </div>
           </div>
