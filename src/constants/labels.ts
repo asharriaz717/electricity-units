@@ -10,7 +10,6 @@ export const LABELS = {
   // App Branding & Navigation
   app: {
     name: 'Electricity Bill Manager',
-    subtitle: 'Meter 1 (UP) & Meter 2 (Down)',
     tagline: 'Values, Newly Added Units, & 9 to 9 Cycle Calculation',
     backToHome: 'Back to Home',
     openSettings: 'Open Settings',

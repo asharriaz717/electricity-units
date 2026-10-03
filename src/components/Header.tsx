@@ -49,7 +49,6 @@ export const Header: React.FC<HeaderProps> = ({
             <h1 className="text-base font-bold text-slate-900 tracking-tight leading-tight">
               {LABELS.app.name}
             </h1>
-            <p className="text-xs text-slate-500 font-medium">{LABELS.app.subtitle}</p>
           </div>
         </button>
 
